@@ -20,6 +20,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"testing"
 	"time"
 )
 
@@ -31,7 +32,6 @@ import "C"
 var testconf struct {
 	Brokers      string
 	Topic        string
-	GroupID      string
 	PerfMsgCount int
 	PerfMsgSize  int
 	Config       []string
@@ -52,7 +52,6 @@ func testconfRead() bool {
 	// Default values
 	testconf.PerfMsgCount = 2000000
 	testconf.PerfMsgSize = 100
-	testconf.GroupID = "testgroup"
 
 	jp := json.NewDecoder(cf)
 	err = jp.Decode(&testconf)
@@ -62,13 +61,8 @@ func testconfRead() bool {
 
 	cf.Close()
 
-	if testconf.Brokers[0] == '$' {
-		// Read broker list from environment variable
-		testconf.Brokers = os.Getenv(testconf.Brokers[1:])
-	}
-
 	if testconf.Brokers == "" || testconf.Topic == "" {
-		panic("Missing Brokers or Topic in testconf.json")
+		panic("Missing Brokers and Topic in testconf.json")
 	}
 
 	return true
@@ -92,16 +86,57 @@ func (cm *ConfigMap) updateFromTestconf() error {
 
 }
 
+// ratepdisp tracks and prints message & byte rates
+type ratedisp struct {
+	name      string
+	start     time.Time
+	lastPrint time.Time
+	every     float64
+	cnt       int64
+	size      int64
+	b         *testing.B
+}
+
+// ratedisp_start sets up a new rate displayer
+func ratedispStart(b *testing.B, name string, every float64) (pf ratedisp) {
+	now := time.Now()
+	return ratedisp{name: name, start: now, lastPrint: now, b: b, every: every}
+}
+
+// reset start time and counters
+func (rd *ratedisp) reset() {
+	rd.start = time.Now()
+	rd.cnt = 0
+	rd.size = 0
+}
+
+// print the current (accumulated) rate
+func (rd *ratedisp) print(pfx string) {
+	elapsed := time.Since(rd.start).Seconds()
+
+	rd.b.Logf("%s: %s%d messages in %fs (%.0f msgs/s), %d bytes (%.3fMb/s)",
+		rd.name, pfx, rd.cnt, elapsed, float64(rd.cnt)/elapsed,
+		rd.size, (float64(rd.size)/elapsed)/(1024*1024))
+}
+
+// tick adds cnt of total size size to the rate displayer and also prints
+// running stats every 1s.
+func (rd *ratedisp) tick(cnt, size int64) {
+	rd.cnt += cnt
+	rd.size += size
+
+	if time.Since(rd.lastPrint).Seconds() >= rd.every {
+		rd.print("")
+		rd.lastPrint = time.Now()
+	}
+}
+
 // Return the number of messages available in all partitions of a topic.
 // WARNING: This uses watermark offsets so it will be incorrect for compacted topics.
 func getMessageCountInTopic(topic string) (int, error) {
 
 	// Create consumer
-	config := &ConfigMap{"bootstrap.servers": testconf.Brokers,
-		"group.id": testconf.GroupID}
-	config.updateFromTestconf()
-
-	c, err := NewConsumer(config)
+	c, err := NewConsumer(&ConfigMap{"bootstrap.servers": testconf.Brokers})
 	if err != nil {
 		return 0, err
 	}
@@ -128,52 +163,4 @@ func getMessageCountInTopic(topic string) (int, error) {
 	}
 
 	return cnt, nil
-}
-
-// getBrokerList returns a list of brokers (ids) in the cluster
-func getBrokerList(H Handle) (brokers []int32, err error) {
-	md, err := getMetadata(H, nil, true, 15*1000)
-	if err != nil {
-		return nil, err
-	}
-
-	brokers = make([]int32, len(md.Brokers))
-	for i, mdBroker := range md.Brokers {
-		brokers[i] = mdBroker.ID
-	}
-
-	return brokers, nil
-}
-
-// waitTopicInMetadata waits for the given topic to show up in metadata
-func waitTopicInMetadata(H Handle, topic string, timeoutMs int) error {
-	d, _ := time.ParseDuration(fmt.Sprintf("%dms", timeoutMs))
-	tEnd := time.Now().Add(d)
-
-	for {
-		remain := tEnd.Sub(time.Now()).Seconds()
-		if remain < 0.0 {
-			return newErrorFromString(ErrTimedOut,
-				fmt.Sprintf("Timed out waiting for topic %s to appear in metadata", topic))
-		}
-
-		md, err := getMetadata(H, nil, true, int(remain*1000))
-		if err != nil {
-			return err
-		}
-
-		for _, t := range md.Topics {
-			if t.Topic != topic {
-				continue
-			}
-			if t.Error.Code() != ErrNoError || len(t.Partitions) < 1 {
-				continue
-			}
-			// Proper topic found in metadata
-			return nil
-		}
-
-		time.Sleep(500 * 1000) // 500ms
-	}
-
 }

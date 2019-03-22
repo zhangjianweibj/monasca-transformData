@@ -15,7 +15,7 @@ exclude github.com/Sirupsen/logrus v1.1.0
 require (
 	github.com/BurntSushi/toml v0.3.1 // indirect
 	github.com/Sirupsen/logrus v1.0.6
-	github.com/confluentinc/confluent-kafka-go v0.11.6
+	github.com/confluentinc/confluent-kafka-go v0.9.2
 	github.com/onsi/ginkgo v1.8.0 // indirect
 	github.com/onsi/gomega v1.5.0 // indirect
 	github.com/sirupsen/logrus v1.4.0 // indirect

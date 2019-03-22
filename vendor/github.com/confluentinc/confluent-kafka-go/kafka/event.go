@@ -23,25 +23,8 @@ import (
 )
 
 /*
-#include <stdlib.h>
 #include <librdkafka/rdkafka.h>
 #include "glue_rdkafka.h"
-
-
-#ifdef RD_KAFKA_V_HEADERS
-void chdrs_to_tmphdrs (rd_kafka_headers_t *chdrs, tmphdr_t *tmphdrs) {
-   size_t i = 0;
-   const char *name;
-   const void *val;
-   size_t size;
-
-   while (!rd_kafka_header_get_all(chdrs, i,
-                                   &tmphdrs[i].key,
-                                   &tmphdrs[i].val,
-                                   (size_t *)&tmphdrs[i].size))
-     i++;
-}
-#endif
 
 rd_kafka_event_t *_rk_queue_poll (rd_kafka_queue_t *rkq, int timeoutMs,
                                   rd_kafka_event_type_t *evtype,
@@ -56,25 +39,8 @@ rd_kafka_event_t *_rk_queue_poll (rd_kafka_queue_t *rkq, int timeoutMs,
     *evtype = rd_kafka_event_type(rkev);
 
     if (*evtype == RD_KAFKA_EVENT_FETCH) {
-#ifdef RD_KAFKA_V_HEADERS
-        rd_kafka_headers_t *hdrs;
-#endif
-
         fcMsg->msg = (rd_kafka_message_t *)rd_kafka_event_message_next(rkev);
         fcMsg->ts = rd_kafka_message_timestamp(fcMsg->msg, &fcMsg->tstype);
-
-#ifdef RD_KAFKA_V_HEADERS
-        if (!rd_kafka_message_headers(fcMsg->msg, &hdrs)) {
-           fcMsg->tmphdrsCnt = rd_kafka_header_cnt(hdrs);
-           fcMsg->tmphdrs = malloc(sizeof(*fcMsg->tmphdrs) * fcMsg->tmphdrsCnt);
-           chdrs_to_tmphdrs(hdrs, fcMsg->tmphdrs);
-        } else {
-#else
-        if (1) {
-#endif
-           fcMsg->tmphdrs = NULL;
-           fcMsg->tmphdrsCnt = 0;
-        }
     }
     return rkev;
 }
@@ -88,15 +54,6 @@ type Event interface {
 }
 
 // Specific event types
-
-// Stats statistics event
-type Stats struct {
-	statsJSON string
-}
-
-func (e Stats) String() string {
-	return e.statsJSON
-}
 
 // AssignedPartitions consumer group rebalance event: assigned partition set
 type AssignedPartitions struct {
@@ -232,9 +189,6 @@ out:
 			default:
 				retval = newErrorFromCString(cErr, C.rd_kafka_event_error_string(rkev))
 			}
-
-		case C.RD_KAFKA_EVENT_STATS:
-			retval = &Stats{C.GoString(C.rd_kafka_event_stats(rkev))}
 
 		case C.RD_KAFKA_EVENT_DR:
 			// Producer Delivery Report event
