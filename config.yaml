@@ -1,0 +1,12 @@
+logging:
+#  file: monasca-transformData.log
+  level: INFO
+
+consumerTopic: custom-metrics
+producerTopic: metrics
+
+kafka:
+  bootstrap.servers: localhost:9092
+  group.id: monasca-transformData
+
+tenantId: 1231243
