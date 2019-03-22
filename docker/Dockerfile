@@ -26,10 +26,6 @@ run mkdir -p $GOPATH/src/github.com/zhangjianweibj/monasca-transformData && \
   git remote add origin $AGGREGATOR_REPO && \
   git fetch origin $AGGREGATOR_BRANCH && \
   git reset --hard FETCH_HEAD && \
-  glide mirror set golang.org/x/crypto github.com/golang/crypto && \
-  glide mirror set golang.org/x/sys github.com/golang/sys && \
-  glide mirror set golang.org/x/text github.com/golang/text && \
-  glide install && \
   go build
 
 from alpine:3.8
