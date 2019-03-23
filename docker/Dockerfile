@@ -19,8 +19,6 @@ run mkdir -p $GOPATH/src/github.com/zhangjianweibj/monasca-transformData && \
   git remote add origin $AGGREGATOR_REPO && \
   git fetch origin $AGGREGATOR_BRANCH && \
   git reset --hard FETCH_HEAD && \
-  go mod init monasca-transformData && \
-  go get ./... && \
   go mod download && \
   go build
 
