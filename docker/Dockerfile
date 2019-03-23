@@ -1,9 +1,7 @@
-from golang:1.10.3-alpine3.8 as builder
+from golang:1.12-alpine3.9 as builder
 
 arg AGGREGATOR_REPO=https://github.com/zhangjianweibj/monasca-transformData
 arg AGGREGATOR_BRANCH=master
-
-arg GLIDE_PATH=src/github.com/Masterminds/glide
 
 env GOPATH=/go
 
@@ -15,17 +13,15 @@ run apk add --no-cache \
         make \
         py2-jinja2
 
-run git clone https://github.com/Masterminds/glide.git $GOPATH/$GLIDE_PATH && \
-  cd $GOPATH/$GLIDE_PATH && \
-  git checkout tags/v0.13.1 && \
-  make install
-
 run mkdir -p $GOPATH/src/github.com/zhangjianweibj/monasca-transformData && \
   cd $GOPATH/src/github.com/zhangjianweibj/monasca-transformData && \
   git init && \
   git remote add origin $AGGREGATOR_REPO && \
   git fetch origin $AGGREGATOR_BRANCH && \
   git reset --hard FETCH_HEAD && \
+  go mod init monasca-transformData && \
+  go get ./... && \
+  go mod download && \
   go build
 
 from alpine:3.8
