@@ -18,7 +18,10 @@ run mkdir -p $GOPATH/src/github.com/zhangjianweibj/monasca-transformData && \
   git init && \
   git remote add origin $AGGREGATOR_REPO && \
   git fetch origin $AGGREGATOR_BRANCH && \
-  git reset --hard FETCH_HEAD && \
+  git reset --hard FETCH_HEAD
+run export GO111MODULE=on && \
+  export GOPROXY=https://goproxy.io
+RUN go mod tidy && \
   go mod download && \
   go build
 
