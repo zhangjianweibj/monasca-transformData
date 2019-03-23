@@ -33,7 +33,7 @@ run apk add --no-cache \
         librdkafka-dev \
         py2-jinja2
 
-copy --from=builder /go/src/github.com/zhangjianweibj/monasca-transformData/monasca-transformData /
+copy --from=builder /go/src/github.com/zhangjianweibj/monasca-transformData/transform-data /
 
 copy template.py start.sh /
 copy config.yaml.j2 /config/config.yaml.j2
