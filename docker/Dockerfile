@@ -26,7 +26,7 @@ run export GO111MODULE=on && \
   go mod download && \
   go build
 
-from alpine:3.8
+from alpine:3.9
 
 run apk add --no-cache \
         libressl \
