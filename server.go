@@ -12,6 +12,7 @@ import (
 	"github.com/zhangjianweibj/monasca-transformData/models"
 	"os"
 	"strings"
+	"time"
 )
 
 var config = initConfig()
@@ -72,12 +73,13 @@ func initConsumer(consumerTopic, groupID, bootstrapServers string) *kafka.Consum
 		"session.timeout.ms":              6000,
 		"go.events.channel.enable":        true,
 		"go.application.rebalance.enable": true,
-		//"enable.auto.commit":              false,
+		"enable.auto.commit":              false,
 		"default.topic.config": kafka.ConfigMap{"auto.offset.reset": "earliest"},
 	})
 
 	if err != nil {
-		log.Fatalf("Failed to create consumer: %s", err)
+		log.Warnf("Failed to create consumer: %s", err)
+		return nil
 	}
 
 	log.Infof("Created kafka consumer %v", c)
@@ -85,7 +87,8 @@ func initConsumer(consumerTopic, groupID, bootstrapServers string) *kafka.Consum
 	err = c.Subscribe(consumerTopic, nil)
 
 	if err != nil {
-		log.Fatalf("Failed to subscribe to topics %c", err)
+		log.Warnf("Failed to subscribe to topics %c", err)
+		return nil
 	}
 	log.Infof("Subscribed to topic %s as group %s", consumerTopic, groupID)
 
@@ -150,7 +153,12 @@ func main() {
 
 	tenantId := config.GetString("tenantId")
 
+Loop:
 	c := initConsumer(consumerTopic, groupID, bootstrapServers)
+	if c == nil {
+		time.Sleep(time.Second*5)
+		goto Loop
+	}
 	defer c.Close()
 
 	message := make(chan *models.MetricEnvelope, 1)
@@ -164,12 +172,14 @@ func main() {
 		case ev := <-c.Events():
 			switch e := ev.(type) {
 			case kafka.AssignedPartitions:
-				log.Printf("%v\n", e)
+				log.Printf("AssignedPartitions: %v\n", e)
 				c.Assign(e.Partitions)
 			case kafka.RevokedPartitions:
-				log.Printf("%% %v\n", e)
+				log.Printf("RevokedPartitions: %% %v\n", e)
 				c.Unassign()
 			case *kafka.Message:
+				//commit offset at most consume once
+				c.Commit()
 				processMessage(e, message, tenantId)
 			case kafka.PartitionEOF:
 				log.Warnf("%% Reached %v\n", e)
