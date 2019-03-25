@@ -21,5 +21,9 @@ CONSUMER_TOPIC                 custom-metrics                  get metrics from 
 PRODUCER_TOPIC                 metrics                         send messages to the topic
 KAFKA_URI                      kafka:9092                      The host and port for kafka
 KAFKA_GROUP_ID 	               monasca-transform-data          the group id of consumer
-ADMIN_ID                       admin                           id whic replace metrics tenant_id
+ADMIN_ID                       admin                           id which replace metrics tenant_id property
 ============================== =============================== ================================================
+
+install in kubernetes environment (child)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+kubectl create -f monasca-transform-data-deployment.yml
