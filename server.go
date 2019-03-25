@@ -141,6 +141,7 @@ func sendMessage(msg *models.MetricEnvelope, p *kafka.Producer, topic string) {
 		log.Printf("Delivered message to topic %s [%d] at offset %v\n",
 			*m.TopicPartition.Topic, m.TopicPartition.Partition, m.TopicPartition.Offset)
 	}
+	close(deliveryChan)
 }
 
 func main() {
