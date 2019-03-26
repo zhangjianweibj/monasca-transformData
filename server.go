@@ -124,10 +124,10 @@ func processMessage(msg *kafka.Message, bound chan *models.MetricEnvelope, tenan
 	bound <- &metricEnvelope
 }
 
-func sendMessage(msg *models.MetricEnvelope, p *kafka.Producer, topic string) {
+func sendMessage(msg chan*models.MetricEnvelope, p *kafka.Producer, topic string) {
 	log.Printf("before send message++")
 	deliveryChan := make(chan kafka.Event)
-	value, _ := json.Marshal(msg)
+	value, _ := json.Marshal(<-msg)
 	p.Produce(&kafka.Message{
 		TopicPartition: kafka.TopicPartition{Topic: &topic, Partition: kafka.PartitionAny},
 		Value:          []byte(value),
@@ -169,8 +169,8 @@ Loop:
 	p := initProducer(bootstrapServers)
 	defer p.Close()
 
-	go sendMessage(<-message, p, producerTopic)
-
+	go sendMessage(message, p, producerTopic)
+	log.Printf("after go sendMessage::")
 	for true {
 		select {
 /*		case  <-ticker.C:
