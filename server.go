@@ -156,6 +156,7 @@ func main() {
 
 Loop:
 	c := initConsumer(consumerTopic, groupID, bootstrapServers)
+	var ticker = new(time.Ticker)
 	if c == nil {
 		time.Sleep(time.Second*5)
 		goto Loop
@@ -168,10 +169,10 @@ Loop:
 
 	for true {
 		select {
-		case msg := <-message:
-			log.Printf("before send message")
-			sendMessage(msg, p, producerTopic)
-			log.Printf("after send message")
+		case  <-ticker.C:
+			log.Printf("before send message++")
+			sendMessage(<-message, p, producerTopic)
+			log.Printf("after send message++")
 		case ev := <-c.Events():
 			switch e := ev.(type) {
 			case kafka.AssignedPartitions:
