@@ -17,6 +17,8 @@ spec:
           value: DEBUG
         - name: CONSUMER_TOPIC
           value: custom-metrics
+        - name: MAX_THREADS
+          value: 1
         - name: KAFKA_URI
           value: monasca-kafka:9092
         - name: ADMIN_ID
