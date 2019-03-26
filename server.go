@@ -127,7 +127,7 @@ func processMessage(msg *kafka.Message, bound chan *models.MetricEnvelope, tenan
 
 func sendMessage(msg chan *models.MetricEnvelope, p *kafka.Producer, topic string) {
 	for {
-		log.Printf("send message before ++")
+		log.Debugf("send message before ++")
 		deliveryChan := make(chan kafka.Event)
 		value, _ := json.Marshal(<-msg)
 		p.Produce(&kafka.Message{
@@ -145,7 +145,7 @@ func sendMessage(msg chan *models.MetricEnvelope, p *kafka.Producer, topic strin
 				*m.TopicPartition.Topic, m.TopicPartition.Partition, m.TopicPartition.Offset)
 		}
 		close(deliveryChan)
-		log.Printf("send message after ++")
+		log.Debugf("send message after ++")
 	}
 }
 
@@ -178,10 +178,10 @@ Loop:
 		case ev := <-c.Events():
 			switch e := ev.(type) {
 			case kafka.AssignedPartitions:
-				log.Printf("AssignedPartitions: %v\n", e)
+				log.Debugf("AssignedPartitions: %v\n", e)
 				c.Assign(e.Partitions)
 			case kafka.RevokedPartitions:
-				log.Printf("RevokedPartitions: %% %v\n", e)
+				log.Debugf("RevokedPartitions: %% %v\n", e)
 				c.Unassign()
 			case *kafka.Message:
 				processMessage(e, message, tenantId)
