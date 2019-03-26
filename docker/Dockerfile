@@ -13,6 +13,7 @@ run apk add --no-cache \
         make \
         py2-jinja2
 
+env author=zjw@3-26:10:39
 run mkdir -p $GOPATH/src/github.com/zhangjianweibj/monasca-transformData && \
   cd $GOPATH/src/github.com/zhangjianweibj/monasca-transformData && \
   git init && \
