@@ -122,28 +122,31 @@ func processMessage(msg *kafka.Message, bound chan *models.MetricEnvelope, tenan
 	}
 	log.Debugf("after transform++ %#v", metricEnvelope)
 	bound <- &metricEnvelope
+	log.Debugf("after bound++ %#v", metricEnvelope)
 }
 
-func sendMessage(msg chan*models.MetricEnvelope, p *kafka.Producer, topic string) {
-	log.Printf("before send message++")
-	deliveryChan := make(chan kafka.Event)
-	value, _ := json.Marshal(<-msg)
-	p.Produce(&kafka.Message{
-		TopicPartition: kafka.TopicPartition{Topic: &topic, Partition: kafka.PartitionAny},
-		Value:          []byte(value),
-	}, deliveryChan)
+func sendMessage(msg chan *models.MetricEnvelope, p *kafka.Producer, topic string) {
+	for {
+		log.Printf("send message before ++")
+		deliveryChan := make(chan kafka.Event)
+		value, _ := json.Marshal(<-msg)
+		p.Produce(&kafka.Message{
+			TopicPartition: kafka.TopicPartition{Topic: &topic, Partition: kafka.PartitionAny},
+			Value:          []byte(value),
+		}, deliveryChan)
 
-	e := <-deliveryChan
-	m := e.(*kafka.Message)
+		e := <-deliveryChan
+		m := e.(*kafka.Message)
 
-	if m.TopicPartition.Error != nil {
-		log.Warnf("Delivery failed: %v\n", m.TopicPartition.Error)
-	} else {
-		log.Printf("Delivered message to topic %s [%d] at offset %v\n",
-			*m.TopicPartition.Topic, m.TopicPartition.Partition, m.TopicPartition.Offset)
+		if m.TopicPartition.Error != nil {
+			log.Warnf("Delivery failed: %v\n", m.TopicPartition.Error)
+		} else {
+			log.Printf("Delivered message to topic %s [%d] at offset %v\n",
+				*m.TopicPartition.Topic, m.TopicPartition.Partition, m.TopicPartition.Offset)
+		}
+		close(deliveryChan)
+		log.Printf("send message after ++")
 	}
-	close(deliveryChan)
-	log.Printf("after send message++")
 }
 
 func main() {
@@ -186,9 +189,10 @@ Loop:
 				log.Printf("RevokedPartitions: %% %v\n", e)
 				c.Unassign()
 			case *kafka.Message:
+
+				processMessage(e, message, tenantId)
 				//commit offset at most consume once
 				c.Commit()
-				processMessage(e, message, tenantId)
 			case kafka.PartitionEOF:
 				log.Warnf("%% Reached %v\n", e)
 			case kafka.Error:
