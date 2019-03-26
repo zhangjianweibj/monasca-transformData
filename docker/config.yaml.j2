@@ -7,5 +7,6 @@ producerTopic: {{ PRODUCER_TOPIC | default('metrics') }}
 kafka:
   bootstrap.servers: {{ KAFKA_URI | default('kafka:9092') }}
   group.id: {{ KAFKA_GROUP_ID | default('monasca-transform-data') }}
+  max.threads: {{ MAX_THREADS | default(1) }}
 
 tenantId: {{ ADMIN_ID | default('admin') }}
