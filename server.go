@@ -125,6 +125,7 @@ func processMessage(msg *kafka.Message, bound chan *models.MetricEnvelope, tenan
 }
 
 func sendMessage(msg *models.MetricEnvelope, p *kafka.Producer, topic string) {
+	log.Printf("before send message++")
 	deliveryChan := make(chan kafka.Event)
 	value, _ := json.Marshal(msg)
 	p.Produce(&kafka.Message{
@@ -142,6 +143,7 @@ func sendMessage(msg *models.MetricEnvelope, p *kafka.Producer, topic string) {
 			*m.TopicPartition.Topic, m.TopicPartition.Partition, m.TopicPartition.Offset)
 	}
 	close(deliveryChan)
+	log.Printf("after send message++")
 }
 
 func main() {
@@ -156,7 +158,7 @@ func main() {
 
 Loop:
 	c := initConsumer(consumerTopic, groupID, bootstrapServers)
-	var ticker = time.NewTicker(1 * time.Second)
+	//var ticker = time.NewTicker(1 * time.Second)
 	if c == nil {
 		time.Sleep(time.Second*5)
 		goto Loop
@@ -167,12 +169,14 @@ Loop:
 	p := initProducer(bootstrapServers)
 	defer p.Close()
 
+	go sendMessage(<-message, p, producerTopic)
+
 	for true {
 		select {
-		case  <-ticker.C:
+/*		case  <-ticker.C:
 			log.Printf("before send message++")
 			sendMessage(<-message, p, producerTopic)
-			log.Printf("after send message++")
+			log.Printf("after send message++")*/
 		case ev := <-c.Events():
 			switch e := ev.(type) {
 			case kafka.AssignedPartitions:
