@@ -161,14 +161,13 @@ func main() {
 
 Loop:
 	c := initConsumer(consumerTopic, groupID, bootstrapServers)
-	//var ticker = time.NewTicker(1 * time.Second)
 	if c == nil {
 		time.Sleep(time.Second*5)
 		goto Loop
 	}
 	defer c.Close()
 
-	message := make(chan *models.MetricEnvelope, 1)
+	message := make(chan *models.MetricEnvelope, 1024)
 	p := initProducer(bootstrapServers)
 	defer p.Close()
 
@@ -176,10 +175,6 @@ Loop:
 	log.Printf("after go sendMessage::")
 	for true {
 		select {
-/*		case  <-ticker.C:
-			log.Printf("before send message++")
-			sendMessage(<-message, p, producerTopic)
-			log.Printf("after send message++")*/
 		case ev := <-c.Events():
 			switch e := ev.(type) {
 			case kafka.AssignedPartitions:
@@ -189,7 +184,6 @@ Loop:
 				log.Printf("RevokedPartitions: %% %v\n", e)
 				c.Unassign()
 			case *kafka.Message:
-
 				processMessage(e, message, tenantId)
 				//commit offset at most consume once
 				c.Commit()
