@@ -56,6 +56,7 @@ func initConfig() *viper.Viper {
 	config.SetDefault("kafka.bootstrap.servers", "localhost:9092")
 	config.SetDefault("kafka.group.id", "monasca-transformData")
 	config.SetDefault("tenantId", "1231245")
+	config.SetDefault("kafka.max.threads", 1)
 	config.SetConfigName("config")
 	config.AddConfigPath(".")
 	err := config.ReadInConfig()
@@ -130,7 +131,8 @@ func sendMessage(msg chan *models.MetricEnvelope, p *kafka.Producer, topic strin
 	for {
 		log.Debugf("send message before ++")
 		deliveryChan := make(chan kafka.Event)
-		value, _ := json.Marshal(<-msg)
+		message := <-msg
+		value, _ := json.Marshal(message)
 		p.Produce(&kafka.Message{
 			TopicPartition: kafka.TopicPartition{Topic: &topic, Partition: kafka.PartitionAny},
 			Value:          []byte(value),
@@ -154,6 +156,10 @@ func main() {
 
 	consumerTopic := config.GetString("consumerTopic")
 	producerTopic := config.GetString("producerTopic")
+	threads := config.GetInt("kafka.max.threads")
+	if threads <=0 {
+		threads = 1
+	}
 
 	bootstrapServers := config.GetString("kafka.bootstrap.servers")
 	groupID := config.GetString("kafka.group.id")
@@ -168,12 +174,15 @@ Loop:
 	}
 	defer c.Close()
 
-	message := make(chan *models.MetricEnvelope, 1)
+	message := make(chan *models.MetricEnvelope, threads)
 	p := initProducer(bootstrapServers)
 	defer p.Close()
 
-	go sendMessage(message, p, producerTopic)
-	log.Printf("after go sendMessage::")
+	for i :=0;i<threads;i++ {
+		go sendMessage(message, p, producerTopic)
+	}
+
+	log.Debugf("after go sendMessage::")
 	for true {
 		select {
 		case ev := <-c.Events():

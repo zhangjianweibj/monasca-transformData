@@ -8,5 +8,6 @@ producerTopic: metrics
 kafka:
   bootstrap.servers: localhost:9092
   group.id: monasca-transformData
+  max.threads: 1
 
 tenantId: 1231243
