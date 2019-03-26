@@ -169,7 +169,9 @@ Loop:
 	for true {
 		select {
 		case msg := <-message:
+			log.Printf("before send message")
 			sendMessage(msg, p, producerTopic)
+			log.Printf("after send message")
 		case ev := <-c.Events():
 			switch e := ev.(type) {
 			case kafka.AssignedPartitions:
