@@ -116,11 +116,11 @@ func processMessage(msg *kafka.Message, bound chan *models.MetricEnvelope, tenan
 		log.Warnf("%% Invalid metric envelope on %s:%s", msg.TopicPartition, string(msg.Value))
 		return
 	}
-	log.Debugf("before transform %#v", metricEnvelope)
+	log.Debugf("before transform-- %#v", metricEnvelope)
 	if metricEnvelope.Meta != nil {
 		metricEnvelope.Meta["tenantId"] = tenant
 	}
-	log.Debugf("after transform %#v", metricEnvelope)
+	log.Debugf("after transform-- %#v", metricEnvelope)
 	bound <- &metricEnvelope
 }
 
