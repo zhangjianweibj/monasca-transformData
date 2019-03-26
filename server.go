@@ -126,7 +126,7 @@ func processMessage(msg *kafka.Message, bound chan *models.MetricEnvelope, tenan
 }
 
 func sendMessage(msg chan *models.MetricEnvelope, p *kafka.Producer, topic string) {
-	//go routine must ad loop status.
+	//go routine must at loop status.
 	for {
 		log.Debugf("send message before ++")
 		deliveryChan := make(chan kafka.Event)
@@ -168,7 +168,7 @@ Loop:
 	}
 	defer c.Close()
 
-	message := make(chan *models.MetricEnvelope, 1024)
+	message := make(chan *models.MetricEnvelope, 1)
 	p := initProducer(bootstrapServers)
 	defer p.Close()
 
