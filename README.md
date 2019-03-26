@@ -22,6 +22,7 @@ PRODUCER_TOPIC                 metrics                         send messages to 
 KAFKA_URI                      kafka:9092                      The host and port for kafka
 KAFKA_GROUP_ID 	               monasca-transform-data          the group id of consumer
 ADMIN_ID                       admin                           id which replace metrics tenant_id property
+MAX_THREADS                    1                               number of producer,which send messages concurrently
 ============================== =============================== ================================================
 
 install in kubernetes environment (child)
