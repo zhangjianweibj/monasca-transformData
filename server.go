@@ -121,6 +121,10 @@ func processMessage(msg *kafka.Message, bound chan *models.MetricEnvelope, tenan
 	if metricEnvelope.Meta != nil {
 		metricEnvelope.Meta["tenantId"] = tenant
 	}
+	//transform accountname to keystone user
+	getKeystoneUserByAccountName("")
+
+
 	log.Debugf("after transform++ %#v", metricEnvelope)
 	bound <- &metricEnvelope
 	log.Debugf("after bound++ %#v", metricEnvelope)
@@ -150,6 +154,13 @@ func sendMessage(msg chan *models.MetricEnvelope, p *kafka.Producer, topic strin
 		close(deliveryChan)
 		log.Debugf("send message after ++")
 	}
+}
+
+func getKeystoneUserByAccountName(accountName string) (user string, err error) {
+	//get user information from Gcache,LRU method evit cache key.
+
+
+	return "",nil
 }
 
 func main() {
