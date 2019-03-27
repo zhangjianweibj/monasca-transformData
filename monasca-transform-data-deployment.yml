@@ -17,14 +17,14 @@ spec:
         - name: LOG_LEVEL
           value: DEBUG
         - name: CONSUMER_TOPIC
-          value: custom-metrics
+          value: monitor-metrics
         - name: MAX_THREADS
-          value: 10
+          value: "10"
         - name: KAFKA_URI
-          value: monasca-kafka:9092
+          value: 10.110.25.107:9092,10.110.25.105:9092,10.10.6.6:9092
         - name: ADMIN_ID
           value: adminid
-        image: registry.icp.com:5000/library/iop/lma/monasca-transform-data:v0.1
+        image: registry.icp.com:5000/library/iop/lma/monasca-transform-data:v1.0.3
         imagePullPolicy: IfNotPresent
         name: transform-data
         ports:
