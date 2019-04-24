@@ -13,11 +13,13 @@ import (
 	"os"
 	"strings"
 	"time"
+	"runtime"
 )
 
 var config = initConfig()
 
 func init() {
+	runtime.GOMAXPROCS(runtime.NumCPU())
 	// Log as JSON instead of the default ASCII formatter.
 	log.SetFormatter(&log.JSONFormatter{})
 	//log.SetOutput(os.Stdout)
@@ -57,6 +59,7 @@ func initConfig() *viper.Viper {
 	config.SetDefault("kafka.group.id", "monasca-transformData")
 	config.SetDefault("tenantId", "1231245")
 	config.SetDefault("kafka.max.threads", 1)
+	config.SetDefault("poolFactor", 100)
 	config.SetConfigName("config")
 	config.AddConfigPath(".")
 	err := config.ReadInConfig()
@@ -139,7 +142,7 @@ func sendMessage(msg chan *models.MetricEnvelope, p *kafka.Producer, topic strin
 		value, _ := json.Marshal(message)
 		p.Produce(&kafka.Message{
 			TopicPartition: kafka.TopicPartition{Topic: &topic, Partition: kafka.PartitionAny},
-			Value:          []byte(value),
+			Value:          value,
 		}, deliveryChan)
 
 		e := <-deliveryChan
@@ -158,6 +161,7 @@ func sendMessage(msg chan *models.MetricEnvelope, p *kafka.Producer, topic strin
 
 func getKeystoneUserByAccountName(accountName string) (user string, err error) {
 	//get user information from Gcache,LRU method evit cache key.
+	//"github.com/bluele/gcache"
 
 
 	return "",nil
@@ -168,8 +172,13 @@ func main() {
 	consumerTopic := config.GetString("consumerTopic")
 	producerTopic := config.GetString("producerTopic")
 	threads := config.GetInt("kafka.max.threads")
+	poolFactor := config.GetInt("poolFactor")
 	if threads <=0 {
 		threads = 1
+	}
+	//set metrics pool factor default value.
+	if poolFactor <=0 {
+		poolFactor = 100
 	}
 
 	bootstrapServers := config.GetString("kafka.bootstrap.servers")
@@ -185,7 +194,7 @@ Loop:
 	}
 	defer c.Close()
 
-	message := make(chan *models.MetricEnvelope, threads)
+	message := make(chan *models.MetricEnvelope, threads * poolFactor)
 	p := initProducer(bootstrapServers)
 	defer p.Close()
 

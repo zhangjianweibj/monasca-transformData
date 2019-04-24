@@ -22,6 +22,8 @@ spec:
           value: "10"
         - name: KAFKA_URI
           value: 10.110.25.107:9092,10.110.25.105:9092,10.10.6.6:9092
+        - name: POOL_FACTOR
+          value: 100
         - name: ADMIN_ID
           value: adminid
         image: registry.icp.com:5000/library/iop/lma/monasca-transform-data:v1.0.3

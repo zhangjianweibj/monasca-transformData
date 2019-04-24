@@ -4,6 +4,7 @@ logging:
 
 consumerTopic: custom-metrics
 producerTopic: metrics
+poolFactor: 100
 
 kafka:
   bootstrap.servers: localhost:9092

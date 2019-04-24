@@ -3,6 +3,7 @@ logging:
 
 consumerTopic: {{ CONSUMER_TOPIC | default('custom-metrics') }}
 producerTopic: {{ PRODUCER_TOPIC | default('metrics') }}
+poolFactor: {{ POOL_FACTOR | default(100) }}
 
 kafka:
   bootstrap.servers: {{ KAFKA_URI | default('kafka:9092') }}
