@@ -11,7 +11,6 @@ import (
 	"github.com/spf13/viper"
 	"github.com/zhangjianweibj/monasca-transformData/models"
 	"os"
-	"runtime"
 	"strings"
 	"time"
 )
@@ -21,7 +20,6 @@ var (
 )
 
 func init() {
-	runtime.GOMAXPROCS(runtime.NumCPU())
 	// Log as JSON instead of the default ASCII formatter.
 	log.SetFormatter(&log.JSONFormatter{})
 	//log.SetOutput(os.Stdout)
@@ -157,8 +155,8 @@ func sendMessage(msg chan *models.MetricEnvelope, p *kafka.Producer, topic strin
 		if m.TopicPartition.Error != nil {
 			log.Warnf("Delivery failed: %v\n", m.TopicPartition.Error)
 		} else {
-			log.Printf("Delivered message to topic %s [%d] at offset %v\n",
-				*m.TopicPartition.Topic, m.TopicPartition.Partition, m.TopicPartition.Offset)
+			log.Printf("Delivered message to topic %s [%d] at offset %v, value=%#v \n",
+				*m.TopicPartition.Topic, m.TopicPartition.Partition, m.TopicPartition.Offset, message)
 		}
 		close(deliveryChan)
 		log.Debugf("send message after ++")
