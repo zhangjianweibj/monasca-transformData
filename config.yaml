@@ -12,3 +12,4 @@ kafka:
   max.threads: 1
 
 tenantId: 1231243
+version: v1.0.7
