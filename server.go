@@ -11,12 +11,14 @@ import (
 	"github.com/spf13/viper"
 	"github.com/zhangjianweibj/monasca-transformData/models"
 	"os"
+	"runtime"
 	"strings"
 	"time"
-	"runtime"
 )
 
-var config = initConfig()
+var (
+	config = initConfig()
+)
 
 func init() {
 	runtime.GOMAXPROCS(runtime.NumCPU())
@@ -78,7 +80,7 @@ func initConsumer(consumerTopic, groupID, bootstrapServers string) *kafka.Consum
 		"go.events.channel.enable":        true,
 		"go.application.rebalance.enable": true,
 		"enable.auto.commit":              false,
-		"default.topic.config": kafka.ConfigMap{"auto.offset.reset": "earliest"},
+		"default.topic.config":            kafka.ConfigMap{"auto.offset.reset": "earliest"},
 	})
 
 	if err != nil {
@@ -100,7 +102,12 @@ func initConsumer(consumerTopic, groupID, bootstrapServers string) *kafka.Consum
 }
 
 func initProducer(bootstrapServers string) *kafka.Producer {
-	p, err := kafka.NewProducer(&kafka.ConfigMap{"bootstrap.servers": bootstrapServers})
+	p, err := kafka.NewProducer(&kafka.ConfigMap{
+		"bootstrap.servers":            bootstrapServers,
+		"go.batch.producer":            true,
+		"queue.buffering.max.messages": 100000,
+		"message.timeout.ms":           5000,
+	})
 
 	if err != nil {
 		log.Fatalf("Failed to create producer: %s", err)
@@ -126,7 +133,6 @@ func processMessage(msg *kafka.Message, bound chan *models.MetricEnvelope, tenan
 	}
 	//transform accountname to keystone user
 	getKeystoneUserByAccountName("")
-
 
 	log.Debugf("after transform++ %#v", metricEnvelope)
 	bound <- &metricEnvelope
@@ -163,8 +169,7 @@ func getKeystoneUserByAccountName(accountName string) (user string, err error) {
 	//get user information from Gcache,LRU method evit cache key.
 	//"github.com/bluele/gcache"
 
-
-	return "",nil
+	return "", nil
 }
 
 func main() {
@@ -173,11 +178,11 @@ func main() {
 	producerTopic := config.GetString("producerTopic")
 	threads := config.GetInt("kafka.max.threads")
 	poolFactor := config.GetInt("poolFactor")
-	if threads <=0 {
+	if threads <= 0 {
 		threads = 1
 	}
 	//set metrics pool factor default value.
-	if poolFactor <=0 {
+	if poolFactor <= 0 {
 		poolFactor = 100
 	}
 
@@ -189,16 +194,16 @@ func main() {
 Loop:
 	c := initConsumer(consumerTopic, groupID, bootstrapServers)
 	if c == nil {
-		time.Sleep(time.Second*5)
+		time.Sleep(time.Second * 5)
 		goto Loop
 	}
 	defer c.Close()
 
-	message := make(chan *models.MetricEnvelope, threads * poolFactor)
+	message := make(chan *models.MetricEnvelope, threads*poolFactor)
 	p := initProducer(bootstrapServers)
 	defer p.Close()
 
-	for i :=0;i<threads;i++ {
+	for i := 0; i < threads; i++ {
 		go sendMessage(message, p, producerTopic)
 	}
 
