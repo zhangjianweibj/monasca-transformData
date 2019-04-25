@@ -198,6 +198,7 @@ func getKeystoneUserByAccountName(accountName string) (user string, err error) {
 
 func main() {
 
+	log.Debugf("start transform v1.0.5")
 	consumerTopic := config.GetString("consumerTopic")
 	producerTopic := config.GetString("producerTopic")
 	threads := config.GetInt("kafka.max.threads")
@@ -227,7 +228,6 @@ Loop:
 	p := initProducer(bootstrapServers)
 	defer p.Close()
 
-	log.Debugf("after go sendMessage::")
 	kafkaMessageProcess(c, message, tenantId)
 
 	for i := 0; i < threads; i++ {
