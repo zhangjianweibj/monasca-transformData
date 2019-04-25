@@ -196,7 +196,7 @@ func getKeystoneUserByAccountName(accountName string) (user string, err error) {
 
 func main() {
 
-	log.Debugf("start transform v1.0.7")
+	log.Debugf("start transform v1.0.8")
 	consumerTopic := config.GetString("consumerTopic")
 	producerTopic := config.GetString("producerTopic")
 	threads := config.GetInt("kafka.max.threads")
