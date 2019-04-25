@@ -165,6 +165,30 @@ func sendMessage(msg chan *models.MetricEnvelope, p *kafka.Producer, topic strin
 	}
 }
 
+func kafkaMessageProcess(c *kafka.Consumer, message chan *models.MetricEnvelope, tenantId string) {
+	for true {
+		select {
+		case ev := <-c.Events():
+			switch e := ev.(type) {
+			case kafka.AssignedPartitions:
+				log.Debugf("AssignedPartitions: %v\n", e)
+				c.Assign(e.Partitions)
+			case kafka.RevokedPartitions:
+				log.Debugf("RevokedPartitions: %% %v\n", e)
+				c.Unassign()
+			case *kafka.Message:
+				processMessage(e, message, tenantId)
+				//commit offset at most consume once
+				c.Commit()
+			case kafka.PartitionEOF:
+				log.Warnf("%% Reached %v\n", e)
+			case kafka.Error:
+				log.Warnf("%% Error: %v\n", e)
+			}
+		}
+	}
+}
+
 func getKeystoneUserByAccountName(accountName string) (user string, err error) {
 	//get user information from Gcache,LRU method evit cache key.
 	//"github.com/bluele/gcache"
@@ -203,31 +227,10 @@ Loop:
 	p := initProducer(bootstrapServers)
 	defer p.Close()
 
+	log.Debugf("after go sendMessage::")
+	kafkaMessageProcess(c, message, tenantId)
+
 	for i := 0; i < threads; i++ {
 		go sendMessage(message, p, producerTopic)
 	}
-
-	log.Debugf("after go sendMessage::")
-	for true {
-		select {
-		case ev := <-c.Events():
-			switch e := ev.(type) {
-			case kafka.AssignedPartitions:
-				log.Debugf("AssignedPartitions: %v\n", e)
-				c.Assign(e.Partitions)
-			case kafka.RevokedPartitions:
-				log.Debugf("RevokedPartitions: %% %v\n", e)
-				c.Unassign()
-			case *kafka.Message:
-				processMessage(e, message, tenantId)
-				//commit offset at most consume once
-				c.Commit()
-			case kafka.PartitionEOF:
-				log.Warnf("%% Reached %v\n", e)
-			case kafka.Error:
-				log.Warnf("%% Error: %v\n", e)
-			}
-		}
-	}
-
 }
