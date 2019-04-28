@@ -10,6 +10,9 @@ kafka:
   bootstrap.servers: localhost:9092
   group.id: monasca-transformData
   max.threads: 1
+  go.batch.producer: false
+  queue.buffering.max.messages: 100000
+  message.timeout.ms: 5000
 
 tenantId: 1231243
 version: v1.0.8

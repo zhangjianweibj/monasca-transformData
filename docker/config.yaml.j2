@@ -9,6 +9,9 @@ kafka:
   bootstrap.servers: {{ KAFKA_URI | default('kafka:9092') }}
   group.id: {{ KAFKA_GROUP_ID | default('monasca-transform-data') }}
   max.threads: {{ MAX_THREADS | default(1) }}
+  go.batch.producer: {{ PRODUCER_BATCH_ENABLE | default(false) }}
+  queue.buffering.max.messages: {{ PRODUCER_BUFFER_SIZE | default(100000) }}
+  message.timeout.ms: {{ PRODUCER_BATCH_TIME | default(5000) }}
 
 tenantId: {{ ADMIN_ID | default('admin') }}
 version: v1.0.8
