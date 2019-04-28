@@ -100,11 +100,14 @@ func initConsumer(consumerTopic, groupID, bootstrapServers string) *kafka.Consum
 }
 
 func initProducer(bootstrapServers string) *kafka.Producer {
+	batchEnable := config.GetBool("kafka.go.batch.producer")
+	bufferSize := config.GetInt("kafka.queue.buffering.max.messages")
+	timeout := config.GetInt("kafka.message.timeout.ms")
 	p, err := kafka.NewProducer(&kafka.ConfigMap{
 		"bootstrap.servers":            bootstrapServers,
-		"go.batch.producer":            true,
-		"queue.buffering.max.messages": 100000,
-		"message.timeout.ms":           5000,
+		"go.batch.producer":            batchEnable,
+		"queue.buffering.max.messages": bufferSize,
+		"message.timeout.ms":           timeout,
 	})
 
 	if err != nil {
