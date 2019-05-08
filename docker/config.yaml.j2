@@ -12,6 +12,7 @@ kafka:
   go.batch.producer: {{ PRODUCER_BATCH_ENABLE | default(false) }}
   queue.buffering.max.messages: {{ PRODUCER_BUFFER_SIZE | default(100000) }}
   message.timeout.ms: {{ PRODUCER_BATCH_TIME | default(5000) }}
+  consumer.auto.commit: {{ CONSUMER_AUTO_COMMIT | default(true) }}
 
 tenantId: {{ ADMIN_ID | default('admin') }}
-version: v1.0.8
+version: v1.0.9

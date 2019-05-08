@@ -13,6 +13,7 @@ kafka:
   go.batch.producer: false
   queue.buffering.max.messages: 100000
   message.timeout.ms: 5000
+  consumer.auto.commit: true
 
 tenantId: 1231243
-version: v1.0.8
+version: v1.0.9

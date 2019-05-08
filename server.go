@@ -71,13 +71,14 @@ func initConfig() *viper.Viper {
 }
 
 func initConsumer(consumerTopic, groupID, bootstrapServers string) *kafka.Consumer {
+	autoCommit := config.GetBool("kafka.consumer.auto.commit")
 	c, err := kafka.NewConsumer(&kafka.ConfigMap{
 		"bootstrap.servers":               bootstrapServers,
 		"group.id":                        groupID,
 		"session.timeout.ms":              6000,
 		"go.events.channel.enable":        true,
 		"go.application.rebalance.enable": true,
-		"enable.auto.commit":              false,
+		"enable.auto.commit":              autoCommit,
 		"default.topic.config":            kafka.ConfigMap{"auto.offset.reset": "earliest"},
 	})
 
@@ -167,6 +168,7 @@ func sendMessage(msg chan *models.MetricEnvelope, p *kafka.Producer, topic strin
 }
 
 func kafkaMessageProcess(c *kafka.Consumer, message chan *models.MetricEnvelope, tenantId string) {
+	autoCommit := config.GetBool("kafka.consumer.auto.commit")
 	for true {
 		select {
 		case ev := <-c.Events():
@@ -179,8 +181,10 @@ func kafkaMessageProcess(c *kafka.Consumer, message chan *models.MetricEnvelope,
 				c.Unassign()
 			case *kafka.Message:
 				processMessage(e, message, tenantId)
-				//commit offset at most consume once
-				c.Commit()
+				if !autoCommit {
+					//commit offset at most consume once
+					c.Commit()
+				}
 			case kafka.PartitionEOF:
 				log.Warnf("%% Reached %v\n", e)
 			case kafka.Error:
@@ -199,7 +203,7 @@ func getKeystoneUserByAccountName(accountName string) (user string, err error) {
 
 func main() {
 
-	log.Debugf("start transform v1.0.8")
+	log.Debugf("start transform v1.0.9")
 	consumerTopic := config.GetString("consumerTopic")
 	producerTopic := config.GetString("producerTopic")
 	threads := config.GetInt("kafka.max.threads")
