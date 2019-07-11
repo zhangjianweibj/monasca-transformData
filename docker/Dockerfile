@@ -29,6 +29,19 @@ run export GO111MODULE=on && \
 
 from alpine:3.9
 
+ENV \
+    LOG_LEVEL=DEBUG \
+    CONSUMER_TOPIC=custom-metrics \
+    PRODUCER_TOPIC=metrics \
+    POOL_FACTOR="1000" \
+    KAFKA_URI=kafka:9092 \
+    MAX_THREADS="10" \
+    PRODUCER_BATCH_ENABLE="true" \
+    PRODUCER_BUFFER_SIZE="10000" \
+    PRODUCER_BATCH_TIME="5000" \
+    CONSUMER_AUTO_COMMIT="true" \
+    ADMIN_ID=admin
+
 run apk add --no-cache \
         libressl \
         librdkafka-dev \
@@ -40,4 +53,4 @@ copy template.py start.sh /
 copy config.yaml.j2 /config/config.yaml.j2
 expose 8080
 
-cmd ["/start.sh"]
+ENTRYPOINT ["/start.sh"]
