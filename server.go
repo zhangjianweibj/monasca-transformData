@@ -13,6 +13,7 @@ import (
 	"os"
 	"strings"
 	"time"
+	"fmt"
 )
 
 var (
@@ -145,25 +146,11 @@ func sendMessage(msg chan *models.MetricEnvelope, p *kafka.Producer, topic strin
 	//go routine must at loop status.
 	for {
 		log.Debugf("send message before ++")
-		deliveryChan := make(chan kafka.Event)
+
 		message := <-msg
-		value, _ := json.Marshal(message)
-		p.Produce(&kafka.Message{
-			TopicPartition: kafka.TopicPartition{Topic: &topic, Partition: kafka.PartitionAny},
-			Value:          value,
-		}, deliveryChan)
 
-		e := <-deliveryChan
-		m := e.(*kafka.Message)
+		fmt.Printf("%#v", message)
 
-		if m.TopicPartition.Error != nil {
-			log.Warnf("Delivery failed: %v\n", m.TopicPartition.Error)
-		} else {
-			log.Printf("Delivered message to topic %s [%d] at offset %v, value=%#v \n",
-				*m.TopicPartition.Topic, m.TopicPartition.Partition, m.TopicPartition.Offset, message)
-		}
-		close(deliveryChan)
-		log.Debugf("send message after ++")
 	}
 }
 
