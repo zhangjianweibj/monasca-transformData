@@ -238,5 +238,4 @@ Loop:
 	}
 
 	kafkaMessageProcess(c, message, tenantId)
-
 }
